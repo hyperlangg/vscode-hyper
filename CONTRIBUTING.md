@@ -59,7 +59,7 @@ After further edits, reload the Extension Development Host (`Ctrl+R` / `Cmd+R`).
 npm test
 ```
 
-This typechecks the project and runs the analyzer tests. Run it before you open a pull request. Add coverage in `src/test/` when you change analyzer behavior.
+This typechecks the project and runs the analyzer tests. Run it before you open a pull request. Add coverage in `src/test/` when you change analyzer behavior. GitHub Actions runs the same command on `main` and on pull requests (Linux, Windows, and macOS).
 
 ## Logging
 
