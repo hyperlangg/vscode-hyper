@@ -1,7 +1,7 @@
 {
   "name": "hyper",
   "displayName": "Hyper",
-  "description": "Syntax highlighting and language support for the Hyper programming language (.hyp)",
+  "description": "Syntax highlighting and Hyper Analyzer (completions, diagnostics, hover) for the Hyper programming language (.hyp)",
   "version": "0.0.1",
   "publisher": "hyperlangg",
   "icon": "doc/images/hyper-light.png",
@@ -9,17 +9,29 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Linters"
   ],
   "keywords": [
     "hyper",
     "hyp",
     "syntax",
-    "highlighting"
+    "highlighting",
+    "lsp",
+    "analyzer"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/hyperlangg/hyper"
+  },
+  "activationEvents": [
+    "onLanguage:hyper"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
   },
   "contributes": {
     "languages": [
@@ -45,6 +57,31 @@
         "scopeName": "source.hyper",
         "path": "./syntaxes/hyper.tmLanguage.json"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Hyper",
+      "properties": {
+        "hyper-analyzer.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces communication between VS Code and Hyper Analyzer."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.6.0"
   }
 }
