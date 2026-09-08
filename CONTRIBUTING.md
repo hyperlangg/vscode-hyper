@@ -94,6 +94,12 @@ npm run package
 gh release upload v0.1.0 hyper-0.1.0.vsix
 ```
 
+## Commit Conventions
+
+We follow standard commit message conventions to keep our git history clean, readable, and easy to parse automatically.
+
+For guidelines on commit messages and history management, see [doc/COMMIT_CONVENTION.md](doc/COMMIT_CONVENTION.md).
+
 ## Pull requests
 
 1. Fork the repo and create a branch from `main`.
