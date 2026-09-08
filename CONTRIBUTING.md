@@ -49,7 +49,7 @@ npm install
 
 1. Open the Run view and select the **Extension** launch configuration, or press `F5`.
 2. That compiles the project and opens an Extension Development Host window.
-3. In that window, open a `.hyp` file (for example `examples/hello.hyp`) and try your change.
+3. In that window, open a `.hyp` file and try your change.
 
 After further edits, reload the Extension Development Host (`Ctrl+R` / `Cmd+R`). The debugger reattaches. You can set breakpoints in the TypeScript sources; compiled output is in `dist/`.
 
