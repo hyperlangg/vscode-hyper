@@ -1,0 +1,403 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Hyper",
+	"scopeName": "source.hyper",
+	"patterns": [
+		{ "include": "#comments" },
+		{ "include": "#decorators" },
+		{ "include": "#f-strings" },
+		{ "include": "#strings" },
+		{ "include": "#numbers" },
+		{ "include": "#function-defs" },
+		{ "include": "#struct-defs" },
+		{ "include": "#trait-defs" },
+		{ "include": "#keywords" },
+		{ "include": "#storage" },
+		{ "include": "#constants" },
+		{ "include": "#types" },
+		{ "include": "#builtins" },
+		{ "include": "#operators" },
+		{ "include": "#function-calls" },
+		{ "include": "#member-access" }
+	],
+	"repository": {
+		"comments": {
+			"comment": "Python: # line comments",
+			"patterns": [
+				{
+					"name": "comment.line.number-sign.hyper",
+					"begin": "#",
+					"end": "$",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.comment.hyper" }
+					}
+				}
+			]
+		},
+		"decorators": {
+			"comment": "Hyper-only (@parallel / @vectorize) — colored like Python decorators",
+			"patterns": [
+				{
+					"name": "meta.annotation.hyper",
+					"match": "(@)\\s*(parallel|vectorize)\\b",
+					"captures": {
+						"1": { "name": "punctuation.definition.decorator.hyper" },
+						"2": { "name": "entity.name.function.decorator.hyper" }
+					}
+				},
+				{
+					"name": "meta.annotation.hyper",
+					"match": "(@)\\s*([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "punctuation.definition.decorator.hyper" },
+						"2": { "name": "entity.name.function.decorator.hyper" }
+					}
+				}
+			]
+		},
+		"f-strings": {
+			"comment": "Python: f-strings",
+			"patterns": [
+				{
+					"name": "meta.fstring.hyper",
+					"begin": "([fF])(\")",
+					"end": "\"",
+					"beginCaptures": {
+						"1": { "name": "storage.type.string.hyper" },
+						"2": { "name": "punctuation.definition.string.begin.hyper" }
+					},
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.string.end.hyper" }
+					},
+					"contentName": "string.interpolated.hyper string.quoted.double.hyper",
+					"patterns": [
+						{ "include": "#string-escapes" },
+						{ "include": "#f-string-interpolation" }
+					]
+				}
+			]
+		},
+		"f-string-interpolation": {
+			"patterns": [
+				{
+					"name": "meta.interpolation.hyper",
+					"begin": "\\{",
+					"end": "\\}",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.interpolation.begin.hyper constant.character.format.placeholder.begin.hyper" }
+					},
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.interpolation.end.hyper constant.character.format.placeholder.end.hyper" }
+					},
+					"patterns": [
+						{ "include": "#f-strings" },
+						{ "include": "#strings" },
+						{ "include": "#numbers" },
+						{ "include": "#keywords" },
+						{ "include": "#storage" },
+						{ "include": "#constants" },
+						{ "include": "#types" },
+						{ "include": "#builtins" },
+						{ "include": "#operators" },
+						{ "include": "#function-calls" },
+						{ "include": "#member-access" }
+					]
+				}
+			]
+		},
+		"strings": {
+			"comment": "Python: double-quoted strings",
+			"patterns": [
+				{
+					"name": "string.quoted.double.hyper",
+					"begin": "\"",
+					"end": "\"",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.string.begin.hyper" }
+					},
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.string.end.hyper" }
+					},
+					"patterns": [
+						{ "include": "#string-escapes" }
+					]
+				}
+			]
+		},
+		"string-escapes": {
+			"patterns": [
+				{
+					"name": "constant.character.escape.hyper",
+					"match": "\\\\(n|t|\"|\\\\|.)"
+				}
+			]
+		},
+		"numbers": {
+			"comment": "Python: decimal ints/floats (underscores allowed)",
+			"patterns": [
+				{
+					"name": "constant.numeric.float.hyper",
+					"match": "\\b\\d(?:_?\\d)*(?:\\.\\d(?:_?\\d)*)(?:[eE][+-]?\\d(?:_?\\d)*)?\\b"
+				},
+				{
+					"name": "constant.numeric.float.hyper",
+					"match": "\\b\\d(?:_?\\d)*[eE][+-]?\\d(?:_?\\d)*\\b"
+				},
+				{
+					"name": "constant.numeric.integer.hyper",
+					"match": "\\b\\d(?:_?\\d)*\\b"
+				}
+			]
+		},
+		"function-defs": {
+			"patterns": [
+				{
+					"comment": "Rust: pub + fn",
+					"match": "\\b(pub)\\s+(fn)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "storage.modifier.visibility.rust" },
+						"2": { "name": "keyword.other.fn.rust" },
+						"3": { "name": "entity.name.function.hyper" }
+					}
+				},
+				{
+					"comment": "Rust pub + Python def",
+					"match": "\\b(pub)\\s+(def)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "storage.modifier.visibility.rust" },
+						"2": { "name": "storage.type.function.hyper" },
+						"3": { "name": "entity.name.function.hyper" }
+					}
+				},
+				{
+					"comment": "Rust: fn",
+					"match": "\\b(fn)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "keyword.other.fn.rust" },
+						"2": { "name": "entity.name.function.hyper" }
+					}
+				},
+				{
+					"comment": "Python: def",
+					"match": "\\b(def)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "storage.type.function.hyper" },
+						"2": { "name": "entity.name.function.hyper" }
+					}
+				}
+			]
+		},
+		"struct-defs": {
+			"comment": "Rust: struct Name",
+			"patterns": [
+				{
+					"match": "\\b(struct)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "keyword.declaration.struct.rust storage.type.rust" },
+						"2": { "name": "entity.name.type.struct.rust" }
+					}
+				}
+			]
+		},
+		"trait-defs": {
+			"comment": "Rust: trait Name",
+			"patterns": [
+				{
+					"match": "\\b(trait)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "keyword.declaration.trait.rust storage.type.rust" },
+						"2": { "name": "entity.name.type.trait.rust" }
+					}
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"comment": "Python: control flow (raise is Python; handle is Hyper-only, same family as except)",
+					"name": "keyword.control.flow.hyper",
+					"match": "\\b(if|elif|else|while|for|in|break|continue|return|raise|handle)\\b"
+				},
+				{
+					"comment": "Python: import",
+					"name": "keyword.control.import.hyper",
+					"match": "\\b(import|from|as)\\b"
+				},
+				{
+					"comment": "Hyper-only: raises (fn modifier)",
+					"name": "keyword.control.exception.hyper",
+					"match": "\\b(raises)\\b"
+				},
+				{
+					"comment": "Python: with",
+					"name": "keyword.control.with.hyper",
+					"match": "\\b(with)\\b"
+				},
+				{
+					"comment": "Python: logical operators",
+					"name": "keyword.operator.logical.hyper",
+					"match": "\\b(and|or|not)\\b"
+				},
+				{
+					"comment": "Python: range",
+					"name": "support.function.builtin.hyper",
+					"match": "\\b(range)\\b"
+				}
+			]
+		},
+		"storage": {
+			"patterns": [
+				{
+					"comment": "Rust: fn",
+					"name": "keyword.other.fn.rust",
+					"match": "\\bfn\\b"
+				},
+				{
+					"comment": "Python: def",
+					"name": "storage.type.function.hyper",
+					"match": "\\bdef\\b"
+				},
+				{
+					"comment": "Rust: struct",
+					"name": "keyword.declaration.struct.rust storage.type.rust",
+					"match": "\\bstruct\\b"
+				},
+				{
+					"comment": "Rust: trait",
+					"name": "keyword.declaration.trait.rust storage.type.rust",
+					"match": "\\btrait\\b"
+				},
+				{
+					"comment": "Rust: let",
+					"name": "keyword.other.rust storage.type.rust",
+					"match": "\\blet\\b"
+				},
+				{
+					"comment": "Rust: mut",
+					"name": "storage.modifier.mut.rust",
+					"match": "\\bmut\\b"
+				},
+				{
+					"comment": "Rust: pub",
+					"name": "storage.modifier.visibility.rust",
+					"match": "\\bpub\\b"
+				},
+				{
+					"comment": "Rust: ref",
+					"name": "keyword.other.rust",
+					"match": "\\bref\\b"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [
+				{
+					"comment": "Rust: true / false (Hyper matches Rust, not Python True/False)",
+					"name": "constant.language.bool.rust",
+					"match": "\\b(true|false)\\b"
+				},
+				{
+					"comment": "Python: None",
+					"name": "constant.language.hyper",
+					"match": "\\bNone\\b"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"comment": "Rust numeric primitives",
+					"name": "entity.name.type.numeric.rust",
+					"match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64)\\b"
+				},
+				{
+					"comment": "Hyper aliases of Rust numeric types — same color as i32/f64",
+					"name": "entity.name.type.numeric.rust",
+					"match": "\\b(int8|int16|int32|int64|uint8|uint16|uint32|uint64|float32|float64)\\b"
+				},
+				{
+					"comment": "Rust: bool (not the bool() builtin call)",
+					"name": "entity.name.type.primitive.rust",
+					"match": "\\bbool\\b(?!\\s*\\()"
+				},
+				{
+					"comment": "Hyper-only type keywords",
+					"name": "entity.name.type.primitive.hyper",
+					"match": "\\b(string|boolean)\\b"
+				},
+				{
+					"comment": "Hyper-only collection types",
+					"name": "entity.name.type.hyper",
+					"match": "\\b(Array|array|Dict|dict)\\b"
+				},
+				{
+					"match": "\\b([A-Z][A-Za-z0-9_]*)\\b(?=\\s*(\\(|:))",
+					"name": "entity.name.type.hyper"
+				}
+			]
+		},
+		"builtins": {
+			"patterns": [
+				{
+					"comment": "Python builtins + Hyper-only I/O helpers in the same family",
+					"name": "support.function.builtin.hyper",
+					"match": "\\b(print|input|open|open_mmap|read_chunk|len|abs|min|max|sum|round|pow|divmod|chr|ord|bin|hex|oct|int|float|str|bool|all|any|sorted|reversed|enumerate|zip|clock)\\b(?=\\s*\\()"
+				}
+			]
+		},
+		"operators": {
+			"comment": "Python arithmetic / comparison / assignment (also used in Hyper)",
+			"patterns": [
+				{
+					"name": "keyword.operator.assignment.hyper",
+					"match": "(\\+=|-=|\\*=|/=|%=|\\*\\*=|=)"
+				},
+				{
+					"name": "keyword.operator.comparison.hyper",
+					"match": "(==|!=|<=|>=|<|>)"
+				},
+				{
+					"name": "keyword.operator.arithmetic.hyper",
+					"match": "(\\*\\*|//|\\+|-|\\*|/|%)"
+				},
+				{
+					"name": "keyword.operator.arrow.hyper",
+					"match": "->"
+				}
+			]
+		},
+		"function-calls": {
+			"patterns": [
+				{
+					"match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+					"captures": {
+						"1": { "name": "entity.name.function.hyper" }
+					}
+				}
+			]
+		},
+		"member-access": {
+			"patterns": [
+				{
+					"match": "(\\.)([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+					"captures": {
+						"1": { "name": "punctuation.accessor.dot.hyper" },
+						"2": { "name": "entity.name.function.member.hyper" }
+					}
+				},
+				{
+					"match": "(\\.)([A-Za-z_][A-Za-z0-9_]*)",
+					"captures": {
+						"1": { "name": "punctuation.accessor.dot.hyper" },
+						"2": { "name": "variable.other.member.hyper" }
+					}
+				},
+				{
+					"comment": "Python: self",
+					"match": "\\b(self)\\b",
+					"name": "variable.language.special.self.hyper"
+				}
+			]
+		}
+	}
+}
