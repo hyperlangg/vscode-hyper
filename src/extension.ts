@@ -21,7 +21,10 @@ export function activate(context: ExtensionContext): void {
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: "file", language: "hyper" }],
+    documentSelector: [
+      { scheme: "file", language: "hyper" },
+      { scheme: "untitled", language: "hyper" },
+    ],
     synchronize: {
       fileEvents: workspace.createFileSystemWatcher("**/*.hyp"),
     },
