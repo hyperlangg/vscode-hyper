@@ -1,19 +1,23 @@
 # Hyper for Visual Studio Code
 
-Syntax highlighting and editor basics for the [Hyper](https://github.com/hyperlangg/hyper) programming language (`.hyp` files).
+Syntax highlighting and **Hyper Analyzer** for the [Hyper](https://github.com/hyperlangg/hyper) programming language (`.hyp` files).
+
+Hyper Analyzer is a TypeScript language server in the same role as rust-analyzer: it understands **Hyper** syntax and compiler rules (`let` / `mut`, `fn` + `raises` / `handle`, `struct` / `trait`, typed builtins). It is **not** a Python linter.
 
 ## Features
 
+- Completions for keywords, in-scope bindings, types after `:`, and methods after `.`
+- Red squiggles for `SyntaxError` and `IndentationError` (same kinds as `hyper typecheck` / `hyper compile`)
+- Hover on errors and on names (types, mutability)
 - **Python-colored** constructs that Hyper shares with Python (`if` / `elif` / `else`, `for` / `while`, `import`, `def`, `raise`, lists, strings, f-strings, `and` / `or` / `not`, `None`, …)
 - **Rust-colored** constructs that Hyper shares with Rust but not Python (`fn`, `struct`, `trait`, `let`, `mut`, `pub`, `ref`, `i32` / `f64` / `bool`, `true` / `false`, …)
-- Hyper-only leftovers (`@parallel`, `@vectorize`, `raises`, `handle`, `string`, `Array` / `Dict`, …) use nearby Python or type-name colors
-- Comment (`#`), indentation, and bracket helpers aligned with Hyper’s Python-shaped syntax
 
 ## Install (development)
 
-1. Open this folder in VS Code / Cursor
-2. Press `F5` (or run **Extension: Extension**) to launch an Extension Development Host
-3. Open any `.hyp` file — language mode should be **Hyper**
+1. `npm install`
+2. Open this folder in VS Code / Cursor
+3. Press `F5` to launch an Extension Development Host
+4. Open any `.hyp` file — language mode should be **Hyper**
 
 ## File association
 
