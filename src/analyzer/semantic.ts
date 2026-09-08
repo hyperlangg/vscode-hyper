@@ -55,6 +55,12 @@ export interface HoverInfo {
   markdown: string;
 }
 
+export interface NameLink {
+  name: string;
+  use: Span;
+  def: Span;
+}
+
 function tyEq(a: HyperType, b: HyperType): boolean {
   if (a.kind !== b.kind) {
     return false;
@@ -114,6 +120,7 @@ class TypeChecker {
   errors: AnalyzerDiagnostic[] = [];
   hovers: HoverInfo[] = [];
   symbols: Binding[] = [];
+  links: NameLink[] = [];
   expectedReturn: HyperType | undefined;
   structs = new Map<string, { fields: Array<{ name: string; ty: HyperType; mutable: boolean }> }>();
   traits = new Map<string, MethodSig[]>();
@@ -197,6 +204,13 @@ class TypeChecker {
 
   hover(span: Span, markdown: string): void {
     this.hovers.push({ span, markdown });
+  }
+
+  use(span: Span, binding: Binding): void {
+    if (binding.kind === "builtin") {
+      return;
+    }
+    this.links.push({ name: binding.name, use: span, def: binding.span });
   }
 
   resolveTypeName(name: string): HyperType {
@@ -609,7 +623,18 @@ class TypeChecker {
       case "Variable": {
         const b = this.lookup(expr.name);
         if (b) {
-          this.hover(span, `\`\`\`hyper\n${b.mutable ? "let mut " : "let "}${b.name}: ${formatType(b.ty)}\n\`\`\``);
+          this.use(span, b);
+          let line: string;
+          if (b.kind === "function" || b.kind === "builtin") {
+            line = `${b.name}: ${formatType(b.ty)}`;
+          } else if (b.kind === "struct") {
+            line = `struct ${b.name}`;
+          } else if (b.kind === "trait") {
+            line = `trait ${b.name}`;
+          } else {
+            line = `${b.mutable ? "let mut " : "let "}${b.name}: ${formatType(b.ty)}`;
+          }
+          this.hover(span, `\`\`\`hyper\n${line}\n\`\`\``);
           return b.ty;
         }
         if (this.structs.has(expr.name)) {
@@ -645,6 +670,7 @@ class TypeChecker {
           this.error(span, `Error: Undefined variable '${expr.name}'.`);
           return { kind: "Any" };
         }
+        this.use(expr.nameSpan, b);
         if (!b.mutable) {
           this.error(span, `Error: Cannot reassign immutable variable '${expr.name}'. Use 'let mut' to make it mutable.`);
         } else if (!TypeChecker.isCompatible(b.ty, vt) && b.ty.kind !== "Any" && vt.kind !== "Any") {
@@ -653,10 +679,13 @@ class TypeChecker {
         return b.ty;
       }
       case "GetField": {
-        if (!this.lookup(expr.object) && !this.structs.has(expr.object)) {
+        const obj = this.lookup(expr.object);
+        if (!obj && !this.structs.has(expr.object)) {
           this.error(span, `Error: Undefined variable '${expr.object}'.`);
         }
-        const obj = this.lookup(expr.object);
+        if (obj) {
+          this.use({ start: span.start, end: span.start + expr.object.length, line: span.line }, obj);
+        }
         if (obj?.ty.kind === "Struct") {
           const st = this.structs.get(obj.ty.name);
           const field = st?.fields.find((f) => f.name === expr.field);
@@ -794,7 +823,7 @@ class TypeChecker {
       name: decl.name,
       ty: { kind: "Function", params, ret },
       mutable: false,
-      span: decl.span,
+      span: decl.nameSpan,
       kind: "function",
     });
   }
@@ -810,30 +839,37 @@ class TypeChecker {
   checkFunction(decl: FunctionDecl, selfType?: HyperType): void {
     const params = decl.params.map((p) => (p.typeAnn ? this.resolveTypeName(p.typeAnn) : ({ kind: "Any" } as HyperType)));
     const ret = decl.returnType ? this.resolveTypeName(decl.returnType) : ({ kind: "Any" } as HyperType);
-    this.define({
-      name: decl.name,
-      ty: { kind: "Function", params: params.slice(), ret },
-      mutable: false,
-      span: decl.span,
-      kind: "function",
-    });
+    const existing = this.scopes[this.scopes.length - 1]?.bindings.get(decl.name);
+    if (!existing || existing.span.start !== decl.nameSpan.start) {
+      this.define({
+        name: decl.name,
+        ty: { kind: "Function", params: params.slice(), ret },
+        mutable: false,
+        span: decl.nameSpan,
+        kind: "function",
+      });
+    }
     this.hover(
-      decl.span,
+      decl.nameSpan,
       `\`\`\`hyper\nfn ${decl.name}(${decl.params.map((p) => p.name).join(", ")})${decl.raises ? " raises" : ""} -> ${formatType(ret)}\n\`\`\``,
     );
     this.pushScope();
-    if (selfType) {
-      this.define({ name: "self", ty: selfType, mutable: true, span: decl.span, kind: "param" });
-    }
     decl.params.forEach((param, i) => {
+      let ty = params[i] ?? { kind: "Any" };
+      if (selfType && param.name === "self") {
+        ty = selfType;
+      }
       this.define({
         name: param.name,
-        ty: params[i] ?? { kind: "Any" },
+        ty,
         mutable: true,
         span: param.span,
         kind: "param",
       });
     });
+    if (selfType && !decl.params.some((p) => p.name === "self")) {
+      this.define({ name: "self", ty: selfType, mutable: true, span: decl.nameSpan, kind: "param" });
+    }
     const prevRet = this.expectedReturn;
     this.expectedReturn = ret;
     const prevLoop = this.loopDepth;
@@ -866,14 +902,14 @@ class TypeChecker {
           name: stmt.name,
           ty: declared,
           mutable: stmt.isMutable,
-          span,
+          span: stmt.nameSpan,
           kind: "variable",
         };
         this.define(binding);
         if (stmt.typeAnn.kind === "None") {
           this.scopes[this.scopes.length - 1]?.inferred.add(stmt.name);
         }
-        this.hover(span, `\`\`\`hyper\nlet ${stmt.isMutable ? "mut " : ""}${stmt.name}: ${formatType(declared)}\n\`\`\``);
+        this.hover(stmt.nameSpan, `\`\`\`hyper\nlet ${stmt.isMutable ? "mut " : ""}${stmt.name}: ${formatType(declared)}\n\`\`\``);
         return;
       }
       case "Expr":
@@ -922,7 +958,7 @@ class TypeChecker {
           }
         }
         this.pushScope();
-        this.define({ name: stmt.varName, ty: elemTy, mutable: false, span, kind: "variable" });
+        this.define({ name: stmt.varName, ty: elemTy, mutable: false, span: stmt.varSpan, kind: "variable" });
         this.loopDepth += 1;
         this.checkStmt(stmt.body);
         this.loopDepth -= 1;
@@ -989,7 +1025,7 @@ class TypeChecker {
           mutable: f.isMut,
         }));
         this.structs.set(stmt.name, { fields });
-        this.define({ name: stmt.name, ty: { kind: "Struct", name: stmt.name }, mutable: false, span, kind: "struct" });
+        this.define({ name: stmt.name, ty: { kind: "Struct", name: stmt.name }, mutable: false, span: stmt.nameSpan, kind: "struct" });
         const selfTy: HyperType = { kind: "Struct", name: stmt.name };
         stmt.methods.forEach((m) => this.checkFunction(m.function, selfTy));
         return;
@@ -999,7 +1035,7 @@ class TypeChecker {
           stmt.name,
           stmt.methods.map((m) => ({ name: m.name, params: m.params.length })),
         );
-        this.define({ name: stmt.name, ty: { kind: "Trait", name: stmt.name }, mutable: false, span, kind: "trait" });
+        this.define({ name: stmt.name, ty: { kind: "Trait", name: stmt.name }, mutable: false, span: stmt.nameSpan, kind: "trait" });
         return;
       case "With": {
         const ty = this.checkExpr(stmt.value);
@@ -1041,6 +1077,7 @@ export interface Analysis {
   diagnostics: AnalyzerDiagnostic[];
   hovers: HoverInfo[];
   symbols: Binding[];
+  links: NameLink[];
   tokens: ReturnType<typeof parse>["tokens"];
 }
 
@@ -1052,6 +1089,7 @@ export function analyze(source: string): Analysis {
     diagnostics: [...parsed.diagnostics, ...checker.errors],
     hovers: checker.hovers,
     symbols: checker.symbols,
+    links: checker.links,
     tokens: parsed.tokens,
   };
 }
