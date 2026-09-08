@@ -1,44 +1,71 @@
 # Hyper for Visual Studio Code
 
-Syntax highlighting and **Hyper Analyzer** for the [Hyper](https://github.com/hyperlangg/hyper) programming language (`.hyp` files).
-
-Hyper Analyzer is a TypeScript language server in the same role as rust-analyzer: it understands **Hyper** syntax and compiler rules (`let` / `mut`, `fn` + `raises` / `handle`, `struct` / `trait`, typed builtins). It is **not** a Python linter.
+Language support for [Hyper](https://github.com/hyperlangg/hyper) in Visual Studio Code and compatible editors. Open a `.hyp` file and the extension activates Hyper Analyzer, a language server bundled with this extension.
 
 ## Features
 
-- Completions for keywords, in-scope bindings, types after `:`, and methods after `.`
-- Red squiggles for `SyntaxError` and `IndentationError` (same kinds as `hyper typecheck` / `hyper compile`)
-- Hover on errors and on names (types, mutability)
-- **Python-colored** constructs that Hyper shares with Python (`if` / `elif` / `else`, `for` / `while`, `import`, `def`, `raise`, lists, strings, f-strings, `and` / `or` / `not`, `None`, …)
-- **Rust-colored** constructs that Hyper shares with Rust but not Python (`fn`, `struct`, `trait`, `let`, `mut`, `pub`, `ref`, `i32` / `f64` / `bool`, `true` / `false`, …)
+* Syntax highlighting
+* Completions
+* Diagnostics
+* Hover
+* Go to Definition
+* Find All References
+* Document symbols and outline
+* Comment, bracket, and indentation editing
+* File icons for `.hyp`
 
-## Install (development)
+## Requirements
 
-1. `npm install`
-2. Open this folder in VS Code / Cursor
-3. Press `F5` to launch an Extension Development Host
-4. Open any `.hyp` file — language mode should be **Hyper**
+* Visual Studio Code 1.85 or newer, or an editor compatible with that API
+* The [Hyper](https://github.com/hyperlangg/hyper) toolchain if you want to compile and run programs
 
-## File association
+Editing, highlighting, and Hyper Analyzer do not require a separate language-server install.
 
-Files ending in `.hyp` are associated with the `hyper` language id automatically. Explorer, tabs, and the language picker use the Hyper ladder logo.
+## Quick start
 
-If a third-party file icon theme still shows a generic document, it is overriding language icons — switch to the default Seti theme, or map `.hyp` to Hyper in that theme’s settings.
+1. Install Hyper if you plan to build programs.
+2. Install this extension from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=hyperlangg.hyper), or from a VSIX with `code --install-extension hyper-0.1.0.vsix`.
+3. Open a `.hyp` file, or create one and set the language mode to **Hyper**.
 
-## Color mapping (overview)
+The editor should highlight the file, show completions as you type, and report problems in the **Problems** panel.
 
-| Construct | Colored like | Scope family |
-|-----------|--------------|--------------|
-| `if` / `for` / `import` / `def` / `raise` / `None` | Python | `keyword.control.*`, `storage.type.function`, `constant.language` |
-| `and` / `or` / `not` | Python | `keyword.operator.logical` |
-| strings / f-strings / `#` comments | Python | `string.quoted`, `string.interpolated`, `comment.line.number-sign` |
-| `fn` | Rust | `keyword.other.fn.rust` |
-| `struct` / `trait` | Rust | `keyword.declaration.struct/trait.rust` |
-| `let` / `mut` / `pub` / `ref` | Rust | `storage.type.rust`, `storage.modifier.mut/visibility.rust`, `keyword.other.rust` |
-| `i32` / `f64` / `bool` | Rust | `entity.name.type.numeric/primitive.rust` |
-| `true` / `false` | Rust | `constant.language.bool.rust` |
-| `@parallel` / `raises` / `handle` / `string` / `Array` | Hyper-only | decorator / exception / type scopes |
+## Completions
+
+Suggestions include keywords, names in scope, types after `:` or `->`, and methods after `.`. Trigger them from the editor or with **Trigger Suggest**.
+
+## Diagnostics
+
+Hyper Analyzer checks the buffer as you edit. Errors appear as squiggles, on hover, and in **Problems**. Reported kinds match Hyper itself (`SyntaxError`, `IndentationError`), including immutable reassignment, `raise` without `raises`, `break` outside a loop, division by zero, undefined names, trait conformance, and typed bindings that must use `let`.
+
+## Hover
+
+Hold the pointer over a name or an error to see the type, mutability, or diagnostic message. You can also use **Show or Focus Hover**.
+
+## Code navigation
+
+* **Go to Definition** jumps to the binding
+* **Find All References** lists uses of that name
+* **Go to Symbol in Editor** and the **Outline** view list functions, structs, traits, and other symbols in the file
+
+## Configuration
+
+Settings live under **Hyper** in the editor settings UI (`hyper-analyzer.*`).
+
+* `hyper-analyzer.trace.server` — trace communication with Hyper Analyzer (`off`, `messages`, or `verbose`)
+
+## Contributing
+
+Bug reports and pull requests are welcome on [hyperlangg/vscode-hyper](https://github.com/hyperlangg/vscode-hyper).
+
+To run the extension from source:
+
+1. Clone the repository and run `npm install`.
+2. Run `npm test`.
+3. Press `F5` to launch an Extension Development Host.
+4. Open a `.hyp` file in that window.
+
+`npm run package` produces a VSIX.
 
 ## License
 
-Same dual license spirit as Hyper (MIT / Apache-2.0) — adjust when you publish.
+Licensed under MIT or Apache-2.0, at your option. See [LICENSE](LICENSE), [LICENSE-MIT](LICENSE-MIT), and [LICENSE-APACHE](LICENSE-APACHE).
