@@ -55,16 +55,7 @@ Settings live under **Hyper** in the editor settings UI (`hyper-analyzer.*`).
 
 ## Contributing
 
-Bug reports and pull requests are welcome on [hyperlangg/vscode-hyper](https://github.com/hyperlangg/vscode-hyper).
-
-To run the extension from source:
-
-1. Clone the repository and run `npm install`.
-2. Run `npm test`.
-3. Press `F5` to launch an Extension Development Host.
-4. Open a `.hyp` file in that window.
-
-`npm run package` produces a VSIX.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for bug reports, building from source, tests, and pull requests.
 
 ## License
 
