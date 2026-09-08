@@ -4,7 +4,10 @@ export interface Span {
   line: number;
 }
 
-export const emptySpan = (line = 1): Span => ({ start: 0, end: 0, line });
+export function spanContains(span: Span, offset: number): boolean {
+  const end = span.end > span.start ? span.end : span.start + 1;
+  return offset >= span.start && offset <= end;
+}
 
 export type ErrorKind = "SyntaxError" | "IndentationError";
 
@@ -59,7 +62,7 @@ export type Expr =
   | { kind: "Group"; span: Span; inner: Expr }
   | { kind: "Unary"; span: Span; op: UnaryOp; right: Expr }
   | { kind: "Binary"; span: Span; op: BinOp; left: Expr; right: Expr }
-  | { kind: "Assign"; span: Span; name: string; value: Expr }
+  | { kind: "Assign"; span: Span; nameSpan: Span; name: string; value: Expr }
   | { kind: "GetField"; span: Span; object: string; field: string }
   | { kind: "SetField"; span: Span; object: string; field: string; value: Expr }
   | { kind: "Call"; span: Span; callee: Expr; args: CallArg[] }
@@ -81,6 +84,7 @@ export interface Param {
 
 export interface FunctionDecl {
   name: string;
+  nameSpan: Span;
   isStrict: boolean;
   params: Param[];
   returnType?: string;
@@ -117,6 +121,7 @@ export type Stmt =
   | {
       kind: "Let";
       span: Span;
+      nameSpan: Span;
       isMutable: boolean;
       name: string;
       typeAnn: TypeAnn;
@@ -135,6 +140,7 @@ export type Stmt =
   | {
       kind: "For";
       span: Span;
+      varSpan: Span;
       forKind: ForKind;
       varName: string;
       iter: ForIter;
@@ -148,12 +154,13 @@ export type Stmt =
   | {
       kind: "Struct";
       span: Span;
+      nameSpan: Span;
       name: string;
       implementedTrait?: string;
       fields: StructField[];
       methods: MethodDecl[];
     }
-  | { kind: "Trait"; span: Span; name: string; methods: FunctionDecl[] }
+  | { kind: "Trait"; span: Span; nameSpan: Span; name: string; methods: FunctionDecl[] }
   | { kind: "With"; span: Span; value: Expr; varName: string; body: Stmt }
   | { kind: "Import"; span: Span; module: string; alias?: string }
   | { kind: "ImportFrom"; span: Span; module: string; names: ImportName[] };
