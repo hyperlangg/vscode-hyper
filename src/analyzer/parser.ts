@@ -30,6 +30,63 @@ const COMPOUND: Partial<Record<TokenType, BinOp>> = {
   StarStarEqual: "Pow",
 };
 
+function fStringParts(tok: Token): Array<{ kind: "Literal"; value: string } | { kind: "Expr"; expr: Expr }> {
+  const raw = tok.lexeme;
+  const prefix = raw[0] === "f" || raw[0] === "F" ? 2 : 1;
+  const body = raw.endsWith('"') ? raw.slice(prefix, -1) : raw.slice(prefix);
+  const parts: Array<{ kind: "Literal"; value: string } | { kind: "Expr"; expr: Expr }> = [];
+  let i = 0;
+  let literal = "";
+  while (i < body.length) {
+    if (body[i] === "{") {
+      if (literal) {
+        parts.push({ kind: "Literal", value: literal });
+        literal = "";
+      }
+      i += 1;
+      const innerStart = i;
+      let depth = 1;
+      while (i < body.length && depth > 0) {
+        if (body[i] === "{") {
+          depth += 1;
+        } else if (body[i] === "}") {
+          depth -= 1;
+          if (depth === 0) {
+            break;
+          }
+        }
+        i += 1;
+      }
+      const inner = body.slice(innerStart, i);
+      const ident = inner.trim();
+      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(ident)) {
+        const pad = inner.indexOf(ident);
+        const start = tok.span.start + prefix + innerStart + pad;
+        parts.push({
+          kind: "Expr",
+          expr: {
+            kind: "Variable",
+            span: { start, end: start + ident.length, line: tok.span.line },
+            name: ident,
+          },
+        });
+      } else if (inner) {
+        parts.push({ kind: "Literal", value: `{${inner}}` });
+      }
+      if (body[i] === "}") {
+        i += 1;
+      }
+    } else {
+      literal += body[i];
+      i += 1;
+    }
+  }
+  if (literal) {
+    parts.push({ kind: "Literal", value: literal });
+  }
+  return parts.length > 0 ? parts : [{ kind: "Literal", value: body }];
+}
+
 export function parse(source: string): ParseResult {
   const scanned = scan(source);
   const tokens = scanned.tokens;
@@ -151,7 +208,7 @@ export function parse(source: string): ParseResult {
     }
     if (check("FString")) {
       advance();
-      return { kind: "FString", span: tok.span, parts: [{ kind: "Literal", value: tok.lexeme }] };
+      return { kind: "FString", span: tok.span, parts: fStringParts(tok) };
     }
     if (check("Not") || check("Bang") || check("Minus")) {
       const opTok = advance();
@@ -396,7 +453,13 @@ export function parse(source: string): ParseResult {
       advance();
       const value = parseAssign();
       if (expr.kind === "Variable") {
-        return { kind: "Assign", span: { start: expr.span.start, end: value.span.end, line: expr.span.line }, name: expr.name, value };
+        return {
+          kind: "Assign",
+          span: { start: expr.span.start, end: value.span.end, line: expr.span.line },
+          nameSpan: expr.span,
+          name: expr.name,
+          value,
+        };
       }
       if (expr.kind === "GetField") {
         return {
@@ -430,7 +493,7 @@ export function parse(source: string): ParseResult {
         left: expr,
         right: value,
       };
-      return { kind: "Assign", span: right.span, name: expr.name, value: right };
+      return { kind: "Assign", span: right.span, nameSpan: expr.span, name: expr.name, value: right };
     }
     return expr;
   };
@@ -477,8 +540,7 @@ export function parse(source: string): ParseResult {
     return params;
   };
 
-  const parseFunctionDecl = (startSpan: Span, isPub: boolean): FunctionDecl => {
-    void isPub;
+  const parseFunctionDecl = (_isPub: boolean, startSpan: Span): FunctionDecl => {
     const nameTok = consume("Identifier", "expected function name");
     const params = parseParams();
     let raises = false;
@@ -504,6 +566,7 @@ export function parse(source: string): ParseResult {
     }
     return {
       name: nameTok.lexeme,
+      nameSpan: nameTok.span,
       isStrict: params.some((p) => !!p.typeAnn) || !!returnType,
       params,
       returnType,
@@ -574,6 +637,7 @@ export function parse(source: string): ParseResult {
       span: { start: spanStart.start, end: body.span.end, line: spanStart.line },
       forKind,
       varName: varTok.lexeme,
+      varSpan: varTok.span,
       iter,
       body,
     };
@@ -601,6 +665,7 @@ export function parse(source: string): ParseResult {
           span: { start: start.span.start, end: initializer.span.end, line: start.span.line },
           isMutable,
           name: nameTok.lexeme,
+          nameSpan: nameTok.span,
           typeAnn,
           initializer,
         };
@@ -718,7 +783,7 @@ export function parse(source: string): ParseResult {
           return undefined;
         }
         advance();
-        const decl = parseFunctionDecl(start.span, isPub);
+        const decl = parseFunctionDecl(isPub, start.span);
         return { kind: "Function", span: decl.span, decl };
       }
       if (check("Trait")) {
@@ -734,7 +799,7 @@ export function parse(source: string): ParseResult {
             }
           }
         }
-        return { kind: "Trait", span: { start: start.span.start, end: block.span.end, line: start.span.line }, name: nameTok.lexeme, methods };
+        return { kind: "Trait", span: { start: start.span.start, end: block.span.end, line: start.span.line }, nameSpan: nameTok.span, name: nameTok.lexeme, methods };
       }
       if (check("Struct")) {
         const start = advance();
@@ -787,7 +852,7 @@ export function parse(source: string): ParseResult {
               if (check("Fn") || check("Def")) {
                 const fnStart = peek();
                 advance();
-                methods.push({ isPub, function: parseFunctionDecl(fnStart.span, isPub) });
+                methods.push({ isPub, function: parseFunctionDecl(isPub, fnStart.span) });
               }
             } else {
               errorAt(peek(), "expected field or method in struct");
@@ -802,6 +867,7 @@ export function parse(source: string): ParseResult {
         return {
           kind: "Struct",
           span: start.span,
+          nameSpan: nameTok.span,
           name: nameTok.lexeme,
           implementedTrait,
           fields,
@@ -823,6 +889,7 @@ export function parse(source: string): ParseResult {
           span: { start: start.span.start, end: initializer.span.end, line: start.span.line },
           isMutable: false,
           name: nameTok.lexeme,
+          nameSpan: nameTok.span,
           typeAnn,
           initializer,
         };
