@@ -1,0 +1,50 @@
+{
+  "name": "hyper",
+  "displayName": "Hyper",
+  "description": "Syntax highlighting and language support for the Hyper programming language (.hyp)",
+  "version": "0.0.1",
+  "publisher": "hyperlangg",
+  "icon": "doc/images/hyper-light.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "hyper",
+    "hyp",
+    "syntax",
+    "highlighting"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperlangg/hyper"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "hyper",
+        "aliases": [
+          "Hyper",
+          "hyper"
+        ],
+        "extensions": [
+          ".hyp"
+        ],
+        "icon": {
+          "light": "./doc/images/hyper-light.png",
+          "dark": "./doc/images/hyper-dark.png"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hyper",
+        "scopeName": "source.hyper",
+        "path": "./syntaxes/hyper.tmLanguage.json"
+      }
+    ]
+  }
+}
