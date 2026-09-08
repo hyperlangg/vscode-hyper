@@ -79,6 +79,21 @@ To try a build as a normal extension instead of the development host:
 code --install-extension hyper-0.1.0.vsix
 ```
 
+## Releases
+
+A GitHub Release always includes source archives. The `.vsix` is a built package; it is uploaded by [`.github/workflows/release.yml`](.github/workflows/release.yml) when you publish a release.
+
+1. Set `version` in `package.json` (and `CHANGELOG.md`) to the release version.
+2. Push a tag such as `v0.1.0` and publish a GitHub Release for that tag.
+3. The workflow attaches `hyper-<version>.vsix` to **Assets**.
+
+To attach a VSIX to a release that already exists, open **Actions → Release → Run workflow**, enter the tag (for example `v0.1.0`), and run it. You can also build locally and upload:
+
+```bash
+npm run package
+gh release upload v0.1.0 hyper-0.1.0.vsix
+```
+
 ## Pull requests
 
 1. Fork the repo and create a branch from `main`.
