@@ -4,6 +4,6 @@ src/**
 tsconfig.json
 .gitignore
 **/*.ts
-!dist/**
+**/*.map
+dist/test/**
 node_modules/**
-vsc-extension-quickstart.md
