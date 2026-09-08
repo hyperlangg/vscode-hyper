@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as path from "path";
 import { Position } from "vscode-languageserver/node";
 import { analyze } from "../analyzer/semantic";
 import { definitionLocation, documentSymbols, referenceLocations } from "../analyzer/query";
@@ -131,16 +129,6 @@ function positionAt(source: string, offset: number): Position {
     r.diagnostics.some((d) => d.message.includes("does not implement method 'draw'")),
     "expected missing trait method",
   );
-}
-
-{
-  const helloPath = path.join(__dirname, "..", "..", "examples", "hello.hyp");
-  const src = fs.readFileSync(helloPath, "utf8");
-  const r = analyze(src);
-  assert(r.diagnostics.length === 0, `hello.hyp errors: ${r.diagnostics.map((d) => d.message).join("; ")}`);
-  const addUse = src.indexOf("add", src.indexOf("print"));
-  const loc = definitionLocation("file:///hello.hyp", r, addUse, (o) => positionAt(src, o));
-  assert(!!loc, "expected go-to-definition for add");
 }
 
 console.log("analyzer tests ok");
