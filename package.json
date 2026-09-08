@@ -1,9 +1,10 @@
 {
   "name": "hyper",
   "displayName": "Hyper",
-  "description": "Syntax highlighting and Hyper Analyzer (completions, diagnostics, hover) for the Hyper programming language (.hyp)",
-  "version": "0.0.1",
+  "description": "Language support for Hyper: syntax highlighting, Hyper Analyzer diagnostics, completions, hover, and go to definition.",
+  "version": "0.1.0",
   "publisher": "hyperlangg",
+  "license": "MIT OR Apache-2.0",
   "icon": "doc/images/hyper-light.png",
   "engines": {
     "vscode": "^1.85.0"
@@ -18,11 +19,16 @@
     "syntax",
     "highlighting",
     "lsp",
-    "analyzer"
+    "analyzer",
+    "go to definition"
   ],
+  "homepage": "https://github.com/hyperlangg/vscode-hyper",
+  "bugs": {
+    "url": "https://github.com/hyperlangg/vscode-hyper/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hyperlangg/hyper"
+    "url": "https://github.com/hyperlangg/vscode-hyper.git"
   },
   "activationEvents": [
     "onLanguage:hyper"
@@ -31,7 +37,9 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "vscode:prepublish": "npm run compile"
+    "test": "tsc -p ./ && node dist/test/analyzer.test.js",
+    "vscode:prepublish": "npm test",
+    "package": "npx --yes @vscode/vsce package"
   },
   "contributes": {
     "languages": [
