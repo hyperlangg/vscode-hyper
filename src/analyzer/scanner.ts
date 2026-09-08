@@ -385,6 +385,7 @@ export function scan(source: string): ScanResult {
       if (usedTab && usedSpace) {
         error("IndentationError", line, lineStart, i, "indent contains mixed spaces and tabs");
       }
+      // CRLF: consume `\r` before deciding the line is empty, or Windows files emit a false DEDENT.
       if (peek() === "\r") {
         i += 1;
       }
