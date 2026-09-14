@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
   release:
     types: [published]
   workflow_dispatch:
@@ -8,6 +11,7 @@ on:
       tag:
         description: Existing release tag to attach the VSIX to (for example v0.1.0)
         required: true
+        type: string
 
 permissions:
   contents: write
@@ -23,7 +27,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx --yes @vscode/vsce package --no-git-tag-version
-      - name: Upload VSIX to the GitHub release
+      - name: Attach VSIX to the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.event.release.tag_name || inputs.tag }}" hyper-*.vsix --clobber
+          TAG: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+        run: |
+          set -eu
+          vsix=$(ls hyper-*.vsix)
+          test -f "$vsix"
+          echo "Attaching $vsix to $TAG"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$vsix" --clobber
+          else
+            gh release create "$TAG" "$vsix" --title "$TAG" --generate-notes
+          fi
