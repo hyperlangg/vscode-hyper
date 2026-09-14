@@ -13,6 +13,7 @@ export type ErrorKind = "SyntaxError" | "IndentationError";
 
 export interface AnalyzerDiagnostic {
   kind: ErrorKind;
+  code?: string;
   message: string;
   span: Span;
 }

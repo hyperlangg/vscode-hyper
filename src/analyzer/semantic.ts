@@ -194,12 +194,12 @@ class TypeChecker {
     return undefined;
   }
 
-  syntaxError(span: Span, message: string): void {
-    this.errors.push({ kind: "SyntaxError", message, span });
+  syntaxError(span: Span, message: string, code?: string): void {
+    this.errors.push({ kind: "SyntaxError", message, span, ...(code ? { code } : {}) });
   }
 
-  error(span: Span, message: string): void {
-    this.syntaxError(span, message);
+  error(span: Span, message: string, code?: string): void {
+    this.syntaxError(span, message, code);
   }
 
   hover(span: Span, markdown: string): void {
@@ -672,7 +672,11 @@ class TypeChecker {
         }
         this.use(expr.nameSpan, b);
         if (!b.mutable) {
-          this.error(span, `Error: Cannot reassign immutable variable '${expr.name}'. Use 'let mut' to make it mutable.`);
+          this.error(
+            span,
+            `Error: Cannot reassign immutable variable '${expr.name}'. Use 'let mut' to make it mutable.`,
+            "immutable-reassignment",
+          );
         } else if (!TypeChecker.isCompatible(b.ty, vt) && b.ty.kind !== "Any" && vt.kind !== "Any") {
           this.error(span, `Type error: cannot assign ${formatType(vt)} to '${expr.name}' of type ${formatType(b.ty)}.`);
         }
