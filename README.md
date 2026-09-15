@@ -24,7 +24,7 @@ Editing, highlighting, and Hyper Analyzer do not require a separate language-ser
 ## Quick start
 
 1. Install Hyper if you plan to build programs.
-2. Install this extension from the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=hyperlangg.hyper), or from a VSIX with `code --install-extension hyper-0.1.0.vsix`.
+2. Install this extension from a GitHub Release asset (`hyper-0.1.0.vsix`), or from the Marketplace once it is published.
 3. Open a `.hyp` file, or create one and set the language mode to **Hyper**.
 
 The editor should highlight the file, show completions as you type, and report problems in the **Problems** panel.
