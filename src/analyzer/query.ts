@@ -1,5 +1,5 @@
 import { Location, Position, Range, SymbolInformation, SymbolKind } from "vscode-languageserver/node";
-import { Span, spanContains } from "./ast";
+import { AnalyzerDiagnostic, Span, spanContains } from "./ast";
 import { Analysis, Binding } from "./semantic";
 
 export function rangeFromSpan(span: Span, positionAt: (offset: number) => Position): Range {
@@ -90,4 +90,52 @@ export function documentSymbols(
     });
   }
   return out;
+}
+
+export interface QuickFix {
+  title: string;
+  span: Span;
+  newText: string;
+}
+
+export function quickFixForDiagnostic(
+  analysis: Analysis,
+  diagnostic: AnalyzerDiagnostic,
+): QuickFix | undefined {
+  if (diagnostic.code !== "immutable-reassignment") {
+    return undefined;
+  }
+
+  const match = diagnostic.message.match(/Cannot reassign immutable variable '([^']+)'/);
+  const varName = match ? match[1] : undefined;
+
+  const link = analysis.links.find(
+    (l) =>
+      (varName ? l.name === varName : true) &&
+      (spanContains(diagnostic.span, l.use.start) || spanContains(l.use, diagnostic.span.start)),
+  );
+
+  let binding: Binding | undefined;
+  if (link) {
+    binding = analysis.symbols.find((s) => s.span.start === link.def.start && s.span.end === link.def.end);
+  }
+  if (!binding && varName) {
+    binding = analysis.symbols
+      .filter((s) => s.name === varName && s.kind === "variable" && s.span.start < diagnostic.span.start)
+      .pop();
+  }
+
+  if (!binding) {
+    return undefined;
+  }
+
+  if (binding.mutable || binding.kind !== "variable") {
+    return undefined;
+  }
+
+  return {
+    title: "Add mut to declaration",
+    span: { start: binding.span.start, end: binding.span.start, line: binding.span.line },
+    newText: "mut ",
+  };
 }

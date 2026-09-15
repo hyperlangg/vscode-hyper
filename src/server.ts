@@ -7,12 +7,16 @@ import {
   TextDocumentSyncKind,
   Hover,
   MarkupKind,
+  CodeAction,
+  CodeActionKind,
+  CodeActionParams,
+  TextEdit,
 } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { analyze, Analysis } from "./analyzer/semantic";
 import { completions } from "./analyzer/complete";
 import { AnalyzerDiagnostic } from "./analyzer/ast";
-import { definitionLocation, documentSymbols, referenceLocations } from "./analyzer/query";
+import { definitionLocation, documentSymbols, referenceLocations, quickFixForDiagnostic } from "./analyzer/query";
 
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
@@ -29,6 +33,7 @@ connection.onInitialize(() => ({
     definitionProvider: true,
     referencesProvider: true,
     documentSymbolProvider: true,
+    codeActionProvider: true,
   },
   serverInfo: {
     name: "hyper-analyzer",
@@ -45,7 +50,7 @@ function toDiagnostic(doc: TextDocument, d: AnalyzerDiagnostic): Diagnostic {
     range: { start, end },
     message: `${d.kind}: line ${d.span.line}: ${d.message}`,
     source: "hyper-analyzer",
-    code: d.kind,
+    code: d.code ?? d.kind,
   };
 }
 
@@ -128,6 +133,44 @@ connection.onDocumentSymbol((params) => {
     return [];
   }
   return documentSymbols(doc.uri, cached(doc), (o) => doc.positionAt(o));
+});
+
+connection.onCodeAction((params: CodeActionParams): CodeAction[] => {
+  const doc = documents.get(params.textDocument.uri);
+  if (!doc) {
+    return [];
+  }
+  const analysis = cached(doc);
+  const actions: CodeAction[] = [];
+
+  for (const diag of params.context.diagnostics) {
+    if (diag.code === "immutable-reassignment") {
+      const analyzerDiag = analysis.diagnostics.find(
+        (d) =>
+          d.code === "immutable-reassignment" &&
+          doc.positionAt(d.span.start).line === diag.range.start.line,
+      );
+      if (analyzerDiag) {
+        const fix = quickFixForDiagnostic(analysis, analyzerDiag);
+        if (fix) {
+          const insertPos = doc.positionAt(fix.span.start);
+          actions.push({
+            title: fix.title,
+            kind: CodeActionKind.QuickFix,
+            diagnostics: [diag],
+            isPreferred: true,
+            edit: {
+              changes: {
+                [doc.uri]: [TextEdit.insert(insertPos, fix.newText)],
+              },
+            },
+          });
+        }
+      }
+    }
+  }
+
+  return actions;
 });
 
 documents.listen(connection);
