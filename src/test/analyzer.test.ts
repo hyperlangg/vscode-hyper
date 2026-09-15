@@ -39,22 +39,22 @@ function positionAt(source: string, offset: number): Position {
   assert(Boolean(fix), "expected quick fix for immutable reassignment");
   assert(fix!.title === "Add mut to declaration", "expected 'Add mut to declaration' title");
   assert(fix!.span.start === 4, `expected fix span.start to be 4, got ${fix!.span.start}`);
+  assert(diag!.name === "x", "expected diagnostic to carry the variable name");
   const patched = source.slice(0, fix!.span.start) + fix!.newText + source.slice(fix!.span.start);
   assert(
     patched === "let mut x = 1\nx = 2\n",
     `expected 'let mut x = 1\\nx = 2\\n', got '${patched}'`,
   );
-  // Ensure assignment line was untouched
   const lines = patched.split("\n");
   assert(lines[1] === "x = 2", "assignment line must remain unchanged");
 }
 
 {
-  // Do not offer fix for parameter
   const r = analyze("fn f(x: i64):\n    return x\n");
   const dummyDiag = {
     kind: "SyntaxError" as const,
     code: "immutable-reassignment",
+    name: "x",
     message: "Error: Cannot reassign immutable variable 'x'. Use 'let mut' to make it mutable.",
     span: { start: 10, end: 11, line: 1 },
   };
@@ -63,7 +63,6 @@ function positionAt(source: string, offset: number): Position {
 }
 
 {
-  // Do not offer fix when binding is already mutable
   const r = analyze("let mut x = 1\nx = 2\n");
   const diag = r.diagnostics.find((d) => d.code === "immutable-reassignment");
   assert(!diag, "expected no immutable error when variable is already mutable");
