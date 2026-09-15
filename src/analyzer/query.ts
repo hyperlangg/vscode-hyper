@@ -102,16 +102,14 @@ export function quickFixForDiagnostic(
   analysis: Analysis,
   diagnostic: AnalyzerDiagnostic,
 ): QuickFix | undefined {
-  if (diagnostic.code !== "immutable-reassignment") {
+  if (diagnostic.code !== "immutable-reassignment" || !diagnostic.name) {
     return undefined;
   }
 
-  const match = diagnostic.message.match(/Cannot reassign immutable variable '([^']+)'/);
-  const varName = match ? match[1] : undefined;
-
+  const varName = diagnostic.name;
   const link = analysis.links.find(
     (l) =>
-      (varName ? l.name === varName : true) &&
+      l.name === varName &&
       (spanContains(diagnostic.span, l.use.start) || spanContains(l.use, diagnostic.span.start)),
   );
 
@@ -119,17 +117,13 @@ export function quickFixForDiagnostic(
   if (link) {
     binding = analysis.symbols.find((s) => s.span.start === link.def.start && s.span.end === link.def.end);
   }
-  if (!binding && varName) {
+  if (!binding) {
     binding = analysis.symbols
       .filter((s) => s.name === varName && s.kind === "variable" && s.span.start < diagnostic.span.start)
       .pop();
   }
 
-  if (!binding) {
-    return undefined;
-  }
-
-  if (binding.mutable || binding.kind !== "variable") {
+  if (!binding || binding.mutable || binding.kind !== "variable") {
     return undefined;
   }
 
